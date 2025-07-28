@@ -1,0 +1,125 @@
+
+-- 1. Crear la Base de Datos 
+CREATE DATABASE IF NOT EXISTS fans_cooperativa
+CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- 2. Seleccionar la base de datos para trabajar
+USE fans_cooperativa;
+
+-- 3. Crear las Tablas (con IF NOT EXISTS para evitar errores si ya existen)
+
+-- Tabla Administrador
+-- Almacena información de los administradores que gestionan el software.
+CREATE TABLE IF NOT EXISTS Administrador (
+    id_Administrador INT AUTO_INCREMENT PRIMARY KEY,
+    Nombre VARCHAR(100) NOT NULL,
+    Apellido VARCHAR(100) NOT NULL,
+    Usuario VARCHAR(50) UNIQUE NOT NULL, -- Nombre de usuario único para el login del admin
+    Contrasena VARCHAR(255) NOT NULL, -- Almacena el hash de la contraseña del admin
+    estado_aprobacion BOOLEAN DEFAULT FALSE, -- Indica si la cuenta de admin está activa (para un posible login de admin)
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP -- Fecha de creación del registro
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- Tabla Vivienda
+-- Representa las unidades de vivienda gestionadas por la cooperativa que usa el software.
+CREATE TABLE IF NOT EXISTS Vivienda (
+    id_Vivienda INT AUTO_INCREMENT PRIMARY KEY,
+    Numero VARCHAR(20) UNIQUE NOT NULL, -- Número de la vivienda (ej. Apto 101, Casa 5)
+    Direccion VARCHAR(255) NOT NULL,
+    Tipo VARCHAR(50), -- Tipo de vivienda (ej. "Apartamento", "Casa", "Chalet")
+    Estado VARCHAR(50), -- Estado actual de la vivienda (ej. "Ocupada", "Desocupada", "En Mantenimiento")
+    id_Administrador INT, -- FK: Administrador responsable o que gestiona esta vivienda
+    FOREIGN KEY (id_Administrador) REFERENCES Administrador(id_Administrador) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- Tabla Residente
+-- Almacena información de los residentes/socios de las cooperativas que usan el software.
+-- Son los usuarios principales de la aplicación de gestión.
+CREATE TABLE IF NOT EXISTS Residente (
+    id_Residente INT AUTO_INCREMENT PRIMARY KEY,
+    Nombre VARCHAR(100) NOT NULL,
+    Apellido VARCHAR(100) NOT NULL,
+    Cedula VARCHAR(20) UNIQUE, -- Cédula de identidad (puede ser NULL si no es obligatoria en el registro inicial)
+    Correo VARCHAR(100) UNIQUE NOT NULL, -- Correo electrónico, usado como usuario para el login
+    Telefono VARCHAR(20),
+    Fecha_Ingreso DATE NOT NULL, -- Fecha de ingreso del residente a la cooperativa
+    id_Vivienda INT, -- FK: Vivienda que habita este residente (puede ser NULL al inicio o si cambia de vivienda)
+    Contrasena VARCHAR(255) NOT NULL, -- ¡CRÍTICO! Almacena el hash de la contraseña del residente
+    estado_aprobacion BOOLEAN DEFAULT FALSE, -- FALSE=Pendiente de aprobación, TRUE=Aprobado para iniciar sesión
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP, -- Fecha y hora de registro en el sistema
+    FOREIGN KEY (id_Vivienda) REFERENCES Vivienda(id_Vivienda) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- Tabla Postulante
+-- Almacena información de personas interesadas en postular a una vivienda.
+-- (Nueva entidad del MER completo)
+CREATE TABLE IF NOT EXISTS Postulante (
+    id_Postulante INT AUTO_INCREMENT PRIMARY KEY,
+    Usuario VARCHAR(50) UNIQUE NOT NULL, -- Nombre de usuario para el postulante (ej. email)
+    Contrasena VARCHAR(255) NOT NULL, -- Contraseña hasheada del postulante
+    Nombre VARCHAR(100), 
+    Apellido VARCHAR(100),
+    Correo VARCHAR(100) UNIQUE,
+    Telefono VARCHAR(20),
+    Fecha_Registro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    -- FK: La relación "Postula" - Un postulante postula a una vivienda
+    id_Vivienda INT,
+    FOREIGN KEY (id_Vivienda) REFERENCES Vivienda(id_Vivienda) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- Tabla Comunicados
+-- Para avisos y notificaciones de la administración a los residentes.
+CREATE TABLE IF NOT EXISTS Comunicados (
+    Id_Aviso INT AUTO_INCREMENT PRIMARY KEY,
+    Titulo VARCHAR(255) NOT NULL,
+    Fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Destinatario VARCHAR(255), -- A quién va dirigido (ej. "Todos", "Edificio A")
+    Contenido TEXT, -- El cuerpo del comunicado (antes "Problema")
+    id_Administrador INT, -- FK: Administrador que publicó el comunicado
+    FOREIGN KEY (id_Administrador) REFERENCES Administrador(id_Administrador) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- Tabla Reclamos
+-- Para que los residentes reporten problemas o hagan sugerencias.
+CREATE TABLE IF NOT EXISTS Reclamos (
+    Id_Reclamo INT AUTO_INCREMENT PRIMARY KEY,
+    Descripcion TEXT NOT NULL,
+    Fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Prioridad VARCHAR(50), -- Nivel de urgencia (ej. "Baja", "Media", "Alta", "Urgente")
+    Estado VARCHAR(50), -- Estado del reclamo (ej. "Pendiente", "En Proceso", "Resuelto", "Rechazado")
+    id_Residente INT, -- FK: Residente que generó el reclamo
+    FOREIGN KEY (id_Residente) REFERENCES Residente(id_Residente) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- Tabla Pagos
+-- Para registrar los pagos realizados por los residentes.
+CREATE TABLE IF NOT EXISTS Pagos (
+    Id_Pagos INT AUTO_INCREMENT PRIMARY KEY,
+    Monto DECIMAL(10, 2) NOT NULL,
+    Medio VARCHAR(50), -- Método de pago (ej. "Transferencia", "Tarjeta", "Efectivo")
+    Fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    Estado VARCHAR(50), -- Estado del pago (ej. "Pendiente", "Pagado", "Atrasado", "Cancelado")
+    id_Residente INT, -- FK: Residente que realizó el pago
+    FOREIGN KEY (id_Residente) REFERENCES Residente(id_Residente) ON DELETE CASCADE
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+
+-- Tabla Comprobante
+-- Almacena los detalles de los comprobantes que los residentes suben y que los administradores validan.
+-- (Nueva entidad del MER completo)
+CREATE TABLE IF NOT EXISTS Comprobante (
+    id_Comprobante INT AUTO_INCREMENT PRIMARY KEY,
+    Tipo VARCHAR(100) NOT NULL, -- Tipo de comprobante (ej. "Recibo de Alquiler", "Factura de Servicios", "Comprobante de Pago")
+    Fecha DATE NOT NULL, -- Fecha del comprobante (la fecha que figura en el documento)
+    Monto DECIMAL(10, 2), -- Monto asociado al comprobante (puede ser NULL si no aplica a todos los tipos)
+    Estado VARCHAR(50) NOT NULL DEFAULT 'Pendiente', -- Estado del comprobante (ej. "Pendiente", "Validado", "Rechazado")
+    Archivo VARCHAR(255) NOT NULL, -- Ruta o URL al archivo del comprobante (ej. "uploads/comprobantes/id_residente_id_comp.pdf")
+    Fecha_Subida DATETIME DEFAULT CURRENT_TIMESTAMP, -- Fecha y hora en que el comprobante fue subido al sistema
+
+    -- FK: Relación "Sube" - Residente sube Comprobante
+    id_Residente INT NOT NULL, 
+    FOREIGN KEY (id_Residente) REFERENCES Residente(id_Residente) ON DELETE CASCADE,
+
+    -- FK: Relación "Valida" - Administrador valida Comprobante
+    id_Administrador INT, -- Puede ser NULL si aún no ha sido validado por un administrador
+    FOREIGN KEY (id_Administrador) REFERENCES Administrador(id_Administrador) ON DELETE SET NULL
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
