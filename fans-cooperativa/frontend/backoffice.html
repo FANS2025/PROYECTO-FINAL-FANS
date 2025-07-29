@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backoffice Admin - F.A.N.S Cooperativa</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/dark-mode.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /* Estilos específicos del Backoffice para evitar sobrecargar style.css */
+        .backoffice-section {
+            padding: 2rem 0;
+            margin-top: 80px; /* Para el header fijo */
+            min-height: calc(100vh - 140px); /* Ajustado para footer */
+            background-color: var(--background-color);
+            transition: background-color 0.4s ease;
+        }
+        .backoffice-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: var(--card-bg);
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+        .backoffice-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+        }
+        .user-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 2rem;
+            text-align: left;
+        }
+        .user-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--section-bg-secondary);
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.8rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+        .user-list li:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .user-details {
+            flex-grow: 1;
+        }
+        .user-name {
+            font-weight: 600;
+            color: var(--dark-text);
+            font-size: 1.1rem;
+        }
+        .user-email, .user-date {
+            display: block;
+            color: var(--medium-text);
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+        .btn-approve {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 0.6rem 1.2rem;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-approve:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+        .no-pending-users {
+            color: var(--medium-text);
+            font-style: italic;
+            padding: 2rem;
+        }
+
+        /* Dark Mode adjustments for Backoffice */
+        body.dark-mode .backoffice-section {
+            background-color: var(--background-color);
+        }
+        body.dark-mode .backoffice-container {
+            background-color: var(--surface-color);
+            box-shadow: var(--card-shadow);
+            border-color: var(--border-color);
+        }
+        body.dark-mode .backoffice-title {
+            color: var(--primary-color);
+        }
+        body.dark-mode .user-list li {
+            background-color: var(--input-bg); /* Un tono más oscuro */
+            border-color: var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        body.dark-mode .user-name {
+            color: var(--text-color);
+        }
+        body.dark-mode .user-email,
+        body.dark-mode .user-date,
+        body.dark-mode .no-pending-users {
+            color: var(--medium-text);
+        }
+        body.dark-mode .btn-approve {
+            background-color: var(--primary-color); /* Verde claro de dark mode */
+            color: var(--background-color); /* Texto oscuro */
+        }
+        body.dark-mode .btn-approve:hover {
+            background-color: var(--secondary-color); /* Verde pasto de dark mode */
+            color: var(--text-color); /* Texto claro */
+        }
+    </style>
+</head>
+
+<body class="light-mode">
+    <header class="header" id="header">
+        <div class="container">
+            <div class="nav-brand">
+                <div class="logo">
+                    <a href="index.html" class="logo-link">
+                        <span class="logo-text">F.A.N.S</span>
+                        <span class="logo-subtitle">Admin</span> </a>
+                </div>
+            </div>
+            <nav class="navigation">
+                <ul class="nav-list">
+                    <li><a href="index.html" class="nav-link">Ir a la Web</a></li> </ul>
+            </nav>
+            <div class="header-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
+                    <span class="theme-icon">🌙</span>
+                </button>
+                </div>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <section class="backoffice-section">
+        <div class="container">
+            <div class="backoffice-container animate-on-scroll">
+                <h1 class="backoffice-title">Aprobación de Usuarios Pendientes</h1>
+                <p class="no-pending-users" id="noPendingUsersMessage">Cargando usuarios pendientes...</p>
+                <ul class="user-list" id="pendingUserList">
+                    </ul>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p class="footer-text">© 2025 F.A.N.S Cooperativa de Viviendas. Todos los derechos reservados.</p>
+                <p class="footer-text">Panel de Administración.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>         <script src="js/dark-mode.js"></script>
+<script src="js/auth.js"></script>          <script src="js/backoffice.js"></script>    </body>
+
+</html>
